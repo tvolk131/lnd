@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/btcsuite/btcd/wire"
+	"github.com/btcsuite/btcwallet/walletdb"
 	"github.com/lightningnetwork/lnd/kvdb"
 	"github.com/lightningnetwork/lnd/lntypes"
 	"github.com/lightningnetwork/lnd/lnwire"
@@ -810,23 +811,7 @@ func (d *DB) DeletePayment(paymentHash lntypes.Hash,
 			)
 
 			for _, htlcID := range toDelete {
-				err = htlcsBucket.Delete(
-					htlcBucketKey(htlcAttemptInfoKey, htlcID),
-				)
-				if err != nil {
-					return err
-				}
-
-				err = htlcsBucket.Delete(
-					htlcBucketKey(htlcFailInfoKey, htlcID),
-				)
-				if err != nil {
-					return err
-				}
-
-				err = htlcsBucket.Delete(
-					htlcBucketKey(htlcSettleInfoKey, htlcID),
-				)
+				err = deletePaymentAttemptTx(htlcsBucket, htlcID)
 				if err != nil {
 					return err
 				}
@@ -950,21 +935,8 @@ func (d *DB) DeletePayments(failedOnly, failedHtlcsOnly bool) error {
 			)
 
 			for _, aid := range htlcIDs {
-				if err := htlcsBucket.Delete(
-					htlcBucketKey(htlcAttemptInfoKey, aid),
-				); err != nil {
-					return err
-				}
-
-				if err := htlcsBucket.Delete(
-					htlcBucketKey(htlcFailInfoKey, aid),
-				); err != nil {
-					return err
-				}
-
-				if err := htlcsBucket.Delete(
-					htlcBucketKey(htlcSettleInfoKey, aid),
-				); err != nil {
+				err = deletePaymentAttemptTx(htlcsBucket, aid)
+				if err != nil {
 					return err
 				}
 			}
@@ -987,6 +959,30 @@ func (d *DB) DeletePayments(failedOnly, failedHtlcsOnly bool) error {
 
 		return nil
 	}, func() {})
+}
+
+// deletePaymentAttemptTx is the same as deletePaymentAttempt, but allows for
+// the injection of an existing transaction.
+func deletePaymentAttemptTx(htlcsBucket walletdb.ReadWriteBucket, aid []byte) error {
+	if err := htlcsBucket.Delete(
+		htlcBucketKey(htlcAttemptInfoKey, aid),
+	); err != nil {
+		return err
+	}
+
+	if err := htlcsBucket.Delete(
+		htlcBucketKey(htlcFailInfoKey, aid),
+	); err != nil {
+		return err
+	}
+
+	if err := htlcsBucket.Delete(
+		htlcBucketKey(htlcSettleInfoKey, aid),
+	); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // fetchSequenceNumbers fetches all the sequence numbers associated with a
