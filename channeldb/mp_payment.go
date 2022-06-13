@@ -224,10 +224,10 @@ func (m *MPPayment) InFlightHTLCs() []HTLCAttempt {
 
 // GetAttempt returns the specified htlc attempt on the payment.
 func (m *MPPayment) GetAttempt(id uint64) (*HTLCAttempt, error) {
-	for _, htlc := range m.HTLCs {
-		htlc := htlc
+	for i := range m.HTLCs {
+		htlc := &m.HTLCs[i]
 		if htlc.AttemptID == id {
-			return &htlc, nil
+			return htlc, nil
 		}
 	}
 

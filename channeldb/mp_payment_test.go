@@ -25,3 +25,29 @@ func TestLazySessionKeyDeserialize(t *testing.T) {
 	sessionKey := attempt.SessionKey()
 	require.Equal(t, priv, sessionKey)
 }
+
+// TestGetAttemptReturnsReferenceToPayment tests that GetAttempt returns a
+// reference to the payment that it is called on, and not just a copy.
+func TestGetAttemptReturnsReferenceToPayment(t *testing.T) {
+	mpp := MPPayment{}
+	attempt, err := mpp.GetAttempt(1234)
+	require.Nil(t, attempt)
+	require.Error(t, err)
+
+	mpp.HTLCs = append(mpp.HTLCs, HTLCAttempt{
+		HTLCAttemptInfo: HTLCAttemptInfo{
+			AttemptID: 1234,
+		},
+	})
+
+	attempt, err = mpp.GetAttempt(1234)
+	require.NotNil(t, attempt)
+	require.NoError(t, err)
+
+	// Changing the htlc through the payment object should affect
+	// the reference.
+	mpp.HTLCs[0].Failure = &HTLCFailInfo{
+		Reason: HTLCFailInternal,
+	}
+	require.NotNil(t, attempt.Failure)
+}
