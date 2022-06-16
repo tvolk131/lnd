@@ -22,6 +22,7 @@ import (
 	"github.com/lightningnetwork/lnd/channeldb/migration25"
 	"github.com/lightningnetwork/lnd/channeldb/migration26"
 	"github.com/lightningnetwork/lnd/channeldb/migration27"
+	"github.com/lightningnetwork/lnd/channeldb/migration28"
 	"github.com/lightningnetwork/lnd/channeldb/migration_01_to_11"
 	"github.com/lightningnetwork/lnd/clock"
 	"github.com/lightningnetwork/lnd/kvdb"
@@ -225,6 +226,10 @@ var (
 			// empty values for historical channels.
 			number:    27,
 			migration: migration27.MigrateHistoricalBalances,
+		},		{
+			// Remove failed payment attempts.
+			number:    28,
+			migration: migration28.MigratePayments,
 		},
 	}
 
